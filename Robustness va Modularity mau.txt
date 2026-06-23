@@ -1,7 +1,0 @@
-Test21.txt
-Ro=0.542
-Mo=0.41854934601664684
-Thoi gian tinh Robustness parallel
-Paralell: Time=Minutes: Seconds: Mili seconds = 0:0:487.6968 	 Ro =0.542
-Paralell: Time=Minutes: Seconds: Mili seconds = 0:18:18160.9654 	 InRo =0.809517779803773	 OutRo=0.971550245116154
-
