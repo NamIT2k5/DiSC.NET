@@ -1,0 +1,17 @@
+start	end	direction
+H	F	1
+F	A	1
+A	B	1
+B	C	1
+C	D	1
+D	E	1
+E	F	1
+E	A	1
+E	B	1
+E	C	1
+H	G	1
+G	I	1
+J	I	1
+J	G	1
+J	K	1
+K	I	1

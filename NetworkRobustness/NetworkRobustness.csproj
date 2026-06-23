@@ -1,0 +1,206 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{E1E83DC1-1E95-48DA-98D5-885638919952}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NetworkRobustness</RootNamespace>
+    <AssemblyName>NetworkRobustness</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Trial|x86'">
+    <OutputPath>bin\x86\Trial\</OutputPath>
+    <DefineConstants>TRACE;PROCESS_NET;TRIAL</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="MathNet.Numerics.IO, Version=2.6.1.30, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MathNet.Numerics.2.6.2\lib\net40\MathNet.Numerics.IO.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Office.Interop.Excel.15.0.4795.1000\lib\net20\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="OpenCL.Net">
+      <HintPath>..\packages\OpenCL.Net.2.2.9.0\lib\net40\OpenCL.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Deployment" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="BasicNetwork\BiNetwork.cs" />
+    <Compile Include="BasicNetwork\BooleanNode.cs" />
+    <Compile Include="BasicNetwork\Clustering.cs" />
+    <Compile Include="BasicNetwork\DoubleNetwork.cs" />
+    <Compile Include="BasicNetwork\DoubleNode.cs" />
+    <Compile Include="BasicNetwork\Perturbation.cs" />
+    <Compile Include="BasicNetwork\BooleanNetwork.cs" />
+    <Compile Include="BasicNetwork\Visistor.cs" />
+    <Compile Include="ComplexNet\DiNetConfigureModel.cs" />
+    <Compile Include="Database\GraphData.cs" />
+    <Compile Include="Database\MinimizerBarnesHut.cs" />
+    <Compile Include="ComplexNet\ComplexNetGenerator.cs" />
+    <Compile Include="BasicNetwork\BasicNetwork.new.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BasicNetwork\FunctionType.new.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BasicNetwork\Interaction.new.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BasicNetwork\InteractionType.new.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BasicNetwork\Node.new.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="BasicNetwork\NodeType.new.cs" />
+    <Compile Include="Database\OptimizerModularityDirected.cs" />
+    <Compile Include="Database\OptimizerModularityExactly.cs" />
+    <Compile Include="Examination\CreateGraphTool.cs" />
+    <Compile Include="Examination\SignalingStudy.cs" />
+    <Compile Include="Geonetwork\GeoNet.cs" />
+    <Compile Include="Geonetwork\Grid.cs" />
+    <Compile Include="GUI\TextBoxForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Lib\cMatrixLib.cs" />
+    <Compile Include="Lib\CommandFunction.cs" />
+    <Compile Include="Lib\Enumerate\Enumerate.cs" />
+    <Compile Include="Lib\Enumerate\EnumerateTest.cs" />
+    <Compile Include="Lib\File.cs" />
+    <Compile Include="Lib\Enumerate\For.cs" />
+    <Compile Include="Lib\Enumerate\OperatorDelegates.cs" />
+    <Compile Include="Lib\Enumerate\Operators.cs" />
+    <Compile Include="Lib\Enumerate\Pair.cs" />
+    <Compile Include="Lib\TextCommand.cs" />
+    <Compile Include="Lib\User.cs" />
+    <Compile Include="Lib\Uti.cs" />
+    <Compile Include="GUI\WinUser.cs" />
+    <Compile Include="GUI\MainForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GUI\MainForm.Designer.cs">
+      <DependentUpon>MainForm.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Networks\Dijkstra.cs" />
+    <Compile Include="Networks\Maximalmatching2.cs" />
+    <Compile Include="Networks\NetCrypto.cs" />
+    <Compile Include="Networks\FuzzyLogic.cs" />
+    <Compile Include="Networks\Mathutil.cs" />
+    <Compile Include="Networks\NetBased.cs" />
+    <Compile Include="Networks\Netutil.cs" />
+    <Compile Include="Database\OptimizerModularity.cs" />
+    <Compile Include="GUI\Program.cs" />
+    <Compile Include="Networks\ThreadSafeRandom.cs" />
+    <Compile Include="Networks\WorkManager.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <EmbeddedResource Include="GUI\MainForm.resx">
+      <DependentUpon>MainForm.cs</DependentUpon>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GUI\TextBoxForm.resx">
+      <DependentUpon>TextBoxForm.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="Microsoft.Office.Core">
+      <Guid>{2DF8D04C-5BFA-101B-BDE5-00AA0044DE52}</Guid>
+      <VersionMajor>2</VersionMajor>
+      <VersionMinor>4</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+    <COMReference Include="VBIDE">
+      <Guid>{0002E157-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>5</VersionMajor>
+      <VersionMinor>3</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Lib\Math.Lib\MathLib.csproj">
+      <Project>{26fc15de-efda-403a-8284-1e2a4ae8a9d8}</Project>
+      <Name>MathLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\packages\OpenCL.Net.2.2.9.0\build\net40\OpenCL.Net.targets" Condition="Exists('..\packages\OpenCL.Net.2.2.9.0\build\net40\OpenCL.Net.targets')" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

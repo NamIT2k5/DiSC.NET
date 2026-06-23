@@ -1,0 +1,20 @@
+start	end	weight	direction
+I'am a student at Univ. of X	My song lyrics	1	1
+I'am a student at Univ. of X	Univ. of X	1	1
+Univ. of X	Classes	1	1
+Classes	Networks	1	1
+Networks	Networks class blog	1	1
+Networks class blog	Blog post about college rankings	1	1
+Blog post about college rankings	USNews College Rankings	1	1
+USNews College Rankings	USNews Featured College 	1	1
+USNews Featured College 	Univ. of X	1	1
+I'm applying to college	USNews College Rankings	1	1
+I teach at Univ. of X	Univ. of X	1	1
+Networks class blog	Blog post about Company Z	1	1
+Blog post about Company Z	Company Z's home page	1	1
+Company Z's home page	Our Founders	1	1
+Company Z's home page	Press Releases	1	1
+Press Releases	Contact Us	1	1
+Our Founders	Contact Us	1	1
+Networks	I teach at Univ. of X	1	1
+Contact Us	Company Z's home page	1	1

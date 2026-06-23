@@ -1,0 +1,283 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{385D748F-2458-446F-8922-11EC373B92F3}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>NetConsole</RootNamespace>
+    <AssemblyName>NetCmd</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+    <PublishUrl>publish\</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Disk</InstallFrom>
+    <UpdateEnabled>false</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>false</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <PlatformTarget>x86</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Trial|x86'">
+    <OutputPath>bin\x86\Trial\</OutputPath>
+    <DefineConstants>TRACE;TRIAL; PROCESS_NET</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x86</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>NetConsole.Program</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Office.Interop.Excel, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.Office.Interop.Excel.15.0.4795.1000\lib\net20\Microsoft.Office.Interop.Excel.dll</HintPath>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\BasicNetwork.new.cs">
+      <Link>BasicNet\BasicNetwork.new.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\BiNetwork.cs">
+      <Link>BasicNet\BiNetwork.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\BooleanNetwork.cs">
+      <Link>BasicNet\BooleanNetwork.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\BooleanNode.cs">
+      <Link>BasicNet\BooleanNode.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\Clustering.cs">
+      <Link>BasicNet\Clustering.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\DoubleNetwork.cs">
+      <Link>BasicNet\DoubleNetwork.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\DoubleNode.cs">
+      <Link>BasicNet\DoubleNode.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\FunctionType.new.cs">
+      <Link>BasicNet\FunctionType.new.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\Interaction.new.cs">
+      <Link>BasicNet\Interaction.new.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\InteractionType.new.cs">
+      <Link>BasicNet\InteractionType.new.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\Node.new.cs">
+      <Link>BasicNet\Node.new.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\NodeType.new.cs">
+      <Link>BasicNet\NodeType.new.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\Perturbation.cs">
+      <Link>BasicNet\Perturbation.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\BasicNetwork\Visistor.cs">
+      <Link>BasicNet\Visistor.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\ComplexNet\ComplexNetGenerator.cs">
+      <Link>BasicNet\ComplexNetGenerator.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\ComplexNet\DiNetConfigureModel.cs">
+      <Link>BasicNet\DiNetConfigureModel.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Database\GraphData.cs">
+      <Link>BasicNet\GraphData.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Database\MinimizerBarnesHut.cs">
+      <Link>BasicNet\MinimizerBarnesHut.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Database\OptimizerModularity.cs">
+      <Link>BasicNet\OptimizerModularity.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Database\OptimizerModularityDirected.cs">
+      <Link>BasicNet\OptimizerModularityDirected.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Database\OptimizerModularityExactly.cs">
+      <Link>BasicNet\OptimizerModularityExactly.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Examination\CreateGraphTool.cs">
+      <Link>BasicNet\CreateGraphTool.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Examination\SignalingStudy.cs">
+      <Link>BasicNet\SignalingStudy.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Geonetwork\GeoNet.cs">
+      <Link>BasicNet\GeoNet.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Geonetwork\Grid.cs">
+      <Link>BasicNet\Grid.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\cMatrixLib.cs">
+      <Link>BasicNet\cMatrixLib.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\CommandFunction.cs">
+      <Link>BasicNet\CommandFunction.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\Enumerate\Enumerate.cs">
+      <Link>BasicNet\Enumerate.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\Enumerate\For.cs">
+      <Link>BasicNet\For.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\Enumerate\OperatorDelegates.cs">
+      <Link>BasicNet\OperatorDelegates.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\Enumerate\Operators.cs">
+      <Link>BasicNet\Operators.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\Enumerate\Pair.cs">
+      <Link>BasicNet\Pair.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\File.cs">
+      <Link>BasicNet\File.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\TextCommand.cs">
+      <Link>BasicNet\TextCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\User.cs">
+      <Link>BasicNet\User.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Lib\Uti.cs">
+      <Link>BasicNet\Uti.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\Dijkstra.cs">
+      <Link>BasicNet\Dijkstra.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\FuzzyLogic.cs">
+      <Link>BasicNet\FuzzyLogic.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\Mathutil.cs">
+      <Link>BasicNet\Mathutil.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\Maximalmatching2.cs">
+      <Link>BasicNet\Maximalmatching2.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\NetBased.cs">
+      <Link>BasicNet\NetBased.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\NetCrypto.cs">
+      <Link>BasicNet\NetCrypto.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\Netutil.cs">
+      <Link>BasicNet\Netutil.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\ThreadSafeRandom.cs">
+      <Link>BasicNet\ThreadSafeRandom.cs</Link>
+    </Compile>
+    <Compile Include="..\NetworkRobustness\Networks\WorkManager.cs">
+      <Link>BasicNet\WorkManager.cs</Link>
+    </Compile>
+    <Compile Include="ConsoleTool.cs" />
+    <Compile Include="ConsoleUser.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Testing.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <COMReference Include="VBIDE">
+      <Guid>{0002E157-0000-0000-C000-000000000046}</Guid>
+      <VersionMajor>5</VersionMajor>
+      <VersionMinor>3</VersionMinor>
+      <Lcid>0</Lcid>
+      <WrapperTool>primary</WrapperTool>
+      <Isolated>False</Isolated>
+      <EmbedInteropTypes>True</EmbedInteropTypes>
+    </COMReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetworkRobustness\Lib\Math.Lib\MathLib.csproj">
+      <Project>{26FC15DE-EFDA-403A-8284-1E2A4AE8A9D8}</Project>
+      <Name>MathLib</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">
+      <Visible>False</Visible>
+      <ProductName>Microsoft .NET Framework 4 Client Profile %28x86 and x64%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1 Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Windows.Installer.4.5">
+      <Visible>False</Visible>
+      <ProductName>Windows Installer 4.5</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

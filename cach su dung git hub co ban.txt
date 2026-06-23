@@ -1,0 +1,7 @@
+add user: Setting -> Collaborators -> Add people -> nhập tên github user -> add 'user' to this repository
+cách cập nhật project từ local lên github: 
+	- git status(kiểm tra những thay đổi trong project)
+	- git add . (add những thay đổi lên repo ở local)
+	- git commit -m "message" (ghi chú thay đổi)
+	- git push (đẩy project từ local lên github)
+cách cập nhật project từ github về local: git pull

@@ -1,0 +1,4 @@
+start	end	weight	direction
+A	B	1	0
+A	C	-1	0
+B	C	-1	0

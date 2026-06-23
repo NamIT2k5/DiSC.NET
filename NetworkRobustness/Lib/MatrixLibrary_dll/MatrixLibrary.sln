@@ -1,0 +1,21 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MatrixLibrary", "MatrixLibrary.csproj", "{E382793F-4A21-490E-9A1B-4C526FC5B16D}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{E382793F-4A21-490E-9A1B-4C526FC5B16D}.Debug.ActiveCfg = Debug|.NET
+		{E382793F-4A21-490E-9A1B-4C526FC5B16D}.Debug.Build.0 = Debug|.NET
+		{E382793F-4A21-490E-9A1B-4C526FC5B16D}.Release.ActiveCfg = Release|.NET
+		{E382793F-4A21-490E-9A1B-4C526FC5B16D}.Release.Build.0 = Release|.NET
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal
