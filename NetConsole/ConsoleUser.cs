@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,9 +14,9 @@ namespace NetConsole
     {
         public void ShowHelloText()
         {
-
-                int widthBar = Console.BufferWidth;
-                string line = string.Format("").PadRight(widthBar, ' ');
+            int widthBar = 80;
+            try { widthBar = Console.BufferWidth; } catch { }
+            string line = string.Format("").PadRight(widthBar, ' ');
                 string Program = "  NetCmd is a network analysis program.".PadRight(widthBar);
                 string Author = "  Authors: Tien-Dzung Tran (1,2) and Yung-Keun Kwon* (1)".PadRight(widthBar);
                 string Address1 = "  1. Complex System Computing Lab, School of Electrical Engineering, University of Ulsan, South Korea".PadRight(widthBar);
@@ -82,90 +82,88 @@ namespace NetConsole
         }
         void ShowProgess(WorkManager<int, int> Context, int WorkID)
         {
-            string buffer="";
+            string buffer = "";
             while (true)
             {
                 if (ProgressManager.Count > 0)
                 {
-                    buffer = "";
-                    for (int i = 0; i < ProgressManager.Count; i++)
+                    // Clean up dead threads
+                    foreach (var t in ProgressManager.Keys.ToList())
                     {
-                        Thread t = ProgressManager.Keys.ElementAt(i);
-                        var e = ProgressManager[t];
-
-                        if (t.IsAlive)
+                        if (!t.IsAlive)
                         {
-                            if (e.Value == -1)
+                            KeyValuePair<int, int> status;
+                            ProgressManager.TryRemove(t, out status);
+                            DateTime removetime;
+                            TimerProgressManager.TryRemove(t, out removetime);
+                        }
+                    }
+
+                    if (ProgressManager.Count > 0)
+                    {
+                        // Find the total target step count (e.g. 1000)
+                        int total = ProgressManager.Values.Where(v => v.Value > 0).Select(v => v.Value).FirstOrDefault();
+                        int completed = ProgressManager.Values.Where(v => v.Value > 0).Select(v => v.Key).DefaultIfEmpty(0).Max();
+
+                        if (total > 0)
+                        {
+                            double percent = (double)completed / total * 100.0;
+                            
+                            // Calculate remaining time based on earliest thread start time
+                            string timer = "";
+                            DateTime earliestTime = DateTime.MaxValue;
+                            foreach (var t in ProgressManager.Keys)
                             {
-                                buffer += string.Format("[TaskID = {0}: running{1,-3}]\t", t.ManagedThreadId, "".PadRight(e.Key, '.'));
-                                ProgressManager[t] = new KeyValuePair<int, int>((e.Key + 1) % 4, e.Value);
-                            }
-                            else
-                            {
-                                string timer = "";
-                                if (e.Key<=1)
+                                if (TimerProgressManager.TryGetValue(t, out DateTime startTime))
                                 {
-                                    if (!TimerProgressManager.ContainsKey(t))
-                                    {
-                                        DateTime ab = DateTime.Now;
-                                        TimerProgressManager.AddOrUpdate(t, ab, (key, existingVal) =>
-                                        {
-                                            return ab;
-                                        });
-                                    }
+                                    if (startTime < earliestTime) earliestTime = startTime;
                                 }
-                                else if(e.Key >= e.Value-1)
+                                else if (ProgressManager[t].Key > 0)
                                 {
+                                    DateTime now = DateTime.Now;
+                                    TimerProgressManager.TryAdd(t, now);
+                                    if (now < earliestTime) earliestTime = now;
+                                }
+                            }
+
+                            if (earliestTime != DateTime.MaxValue && completed > 0)
+                            {
+                                TimeSpan ts = TimeSpan.FromTicks(DateTime.Now.Subtract(earliestTime).Ticks * (total - completed) / completed);
+                                timer = string.Format(" remaining time: {0:D2}h:{1:D2}m:{2:D2}s",
+                                                ts.Hours + ts.Days * 24,
+                                                ts.Minutes,
+                                                ts.Seconds);
+                            }
+
+                            buffer = string.Format("[Progress: {0}/{1} ({2:F1}%)] [Active Threads: {3}]{4}",
+                                completed, total, percent, ProgressManager.Count, timer);
+
+                            if (completed >= total)
+                            {
+                                foreach (var t in ProgressManager.Keys.ToList())
+                                {
+                                    ProgressManager[t] = new KeyValuePair<int, int>(0, -1);
                                     DateTime removetime;
                                     TimerProgressManager.TryRemove(t, out removetime);
-                                }
-                                if (TimerProgressManager.ContainsKey(t))
-                                {
-                                    TimeSpan ts = TimeSpan.FromTicks(DateTime.Now.Subtract(TimerProgressManager[t]).Ticks * (e.Value - (e.Key + 1)) / (e.Key + 1));
-
-
-                                    //TimeSpan timespent = DateTime.Now - TimerProgressManager[t];
-                                    //int secondsremaining = (int)(timespent.TotalSeconds / (e.Key+1)* (e.Value - e.Key));
-
-                                    //TimeSpan ts = TimeSpan.FromSeconds(secondsremaining);
-
-                                    timer = string.Format("\t remaining time:{0:D2}d {1:D2}h:{2:D2}m:{3:D2}s",
-                                                    ts.Days,
-                                                    ts.Hours,
-                                                    ts.Minutes,
-                                                    ts.Seconds);
-                                }else
-                                    timer = "";
-
-                                buffer += string.Format("[TaskID = {0}: {1}/{2}{3}]\t", t.ManagedThreadId, e.Key, e.Value, timer);
-                                if(e.Key>=e.Value-1)
-                                {
-                                     ProgressManager[t] = new KeyValuePair<int,int>(0,-1);
-                                     // Clear the progress line and print newline when task completes
-                                     lock (LockedObj)
-                                     {
-                                         Console.Write("\r\x1B[K\n");  // Clear current line + move to next line
-                                     }
                                 }
                             }
                         }
                         else
                         {
-                            KeyValuePair<int, int> status;
-                            ProgressManager.TryRemove(t, out status);
+                            buffer = string.Format("[Running: {0} active thread(s)]", ProgressManager.Count);
+                        }
+
+                        lock (LockedObj)
+                        {
+                            int consoleWidth = 79;
+                            try { consoleWidth = Math.Max(79, Console.WindowWidth - 1); } catch { }
+                            string printBuffer = buffer.Length > consoleWidth ? buffer.Substring(0, consoleWidth) : buffer.PadRight(consoleWidth);
+                            Console.Write("\r" + printBuffer);
                         }
                     }
-                    lock (LockedObj)
-                    {
-                        // \r = về col 0 dòng hiện tại (ghi đè progress cũ tại chỗ)
-                        // \x1B[K = xóa từ cursor đến cuối dòng (xóa ký tự thừa của lần trước)
-                        // KHÔNG PadRight → không wrap trong terminal hẹp (VS Code 2026)
-                        Console.Write("\r" + buffer + "\x1B[K");
-                    }
                 }
-                Thread.Sleep(2000);  // Giảm từ 2000ms xuống 100ms để progress indicator hiển thị liên tục
+                Thread.Sleep(1000); 
             }
-            
         }
         public override void ShowWaitIndicator(int atStep, int totalStep)
         {
@@ -367,7 +365,7 @@ namespace NetConsole
        
         public override void Clear()
         {
-            Console.Clear();
+            try { Console.Clear(); } catch { }
             lock (this)
             {
                 this.Messageline = -1;

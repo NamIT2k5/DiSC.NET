@@ -1,4 +1,4 @@
-﻿using BasicNet;
+using BasicNet;
 using MathNet;
 using MathNet.Numerics.Statistics;
 using Mathutil;
@@ -26,6 +26,8 @@ namespace BasicNet.Examination
     }
     public class SignalingStudy
     {
+        private static readonly object _fileLock = new object();
+        private static readonly object _resultsLock = new object();
         #region Robustness
         /// <summary>
         /// Calculate Pvalue of robustness estimation
@@ -442,7 +444,7 @@ namespace BasicNet.Examination
         public double DeviationC { get; set; }
     }
  
-    
+
     public static void DiSCNetworkSimulation(
         int nNet,
         int nNodeFrom,
@@ -451,93 +453,516 @@ namespace BasicNet.Examination
         int nMaxLink,
         string reportFileName)
     {
-        Random rnd = new Random((int)DateTime.Now.Ticks);
+        Random rnd = new System.Threading.ThreadSafeRandom();
         string outputPath = Path.Combine(Netutil.OutPutDirector, reportFileName);
- 
-        // Header TSV — 8 cột, mỗi network 1 dòng (chỉ lấy innermost k-core)
-        using (StreamWriter sw = new StreamWriter(outputPath, false))
-        {
-            sw.WriteLine("Id mạng\tSố node\tSố cạnh\tKcore\t" +
-                         "Tỉ lệ D trong lõi\tTỉ lệ I trong lõi\tTỉ lệ C trong lõi\tTỉ lệ S trong lõi");
-        }
- 
+
+        var innermostMap = new ConcurrentDictionary<int, string>();
         var allResults = new List<KLevelStats>();
-        var kshellComputer = new KShellComputer();
-        var analyzer = new RatioAnalyzer();
- 
         int successCount = 0;
-        int attemptCount = 0;
-        int maxAttempts = nNet * 10;
- 
-        
- 
-        while (successCount < nNet && attemptCount < maxAttempts)
+
+        // Prepare output file with header immediately so users can see real-time updates
+        lock (_fileLock)
         {
-            attemptCount++;
-            try
+            using (StreamWriter sw = new StreamWriter(outputPath, false, Encoding.UTF8))
             {
-                int nNodes = rnd.Next(nNodeFrom, nNodeTo + 1);
-                int linksPerStep = rnd.Next(nMinLink, nMaxLink + 1);
- 
-                // B1: Xây mạng theo chiến lược DISC
-                BasicNetwork net = BuildDISCNetwork(nNodes, linksPerStep, rnd);
- 
-                if (net == null || !net.Nodes.Any())
-                    continue;
- 
-                // Bỏ qua nếu không đạt 60% số node mục tiêu
-                if (net.Nodes.Count() < nNodes * 6 / 10)
-                {
-                    
-                    continue;
-                }
- 
-                int nodeCount = net.Nodes.Count();
-                int edgeCount = net.Edges.Count();
- 
-                // B2: K-shell centrality (dùng BasicNetwork API)
-                Dictionary<Node, int> kshell;
+                sw.WriteLine("Id mạng\tSố node\tSố cạnh\tKcore\t" +
+                             "Tỉ lệ D trong lõi kcore trong cùng\tTỉ lệ I trong lõi kcore trong cùng\tTỉ lệ C trong lõi kcore trong cùng\tTỉ lệ S trong lõi kcore trong cùng");
+            }
+        }
+
+        Parallel.For(0, nNet, i =>
+        {
+            int networkId = i + 1;
+            int localAttempts = 0;
+            const int maxLocalAttempts = 10;
+            bool localSuccess = false;
+
+            while (!localSuccess && localAttempts < maxLocalAttempts)
+            {
+                localAttempts++;
                 try
                 {
-                    kshell = net.K_ShellCentrality();
-                }
-                catch (Exception kEx)
-                {
-                    
-                    continue;
-                }
- 
-                // B3: Phân tích tỉ lệ DISC theo từng k-level
-                var results = analyzer.AnalyzeRatios(kshell, successCount + 1, nodeCount, edgeCount, linksPerStep);
-                allResults.AddRange(results);
- 
-                // Chỉ ghi innermost k-core (k_max) — 1 dòng mỗi network, 8 cột
-                var innermostStat = results.OrderByDescending(x => x.KLevel).First();
-                using (StreamWriter sw = new StreamWriter(outputPath, true))
-                {
-                    sw.WriteLine(string.Format(
+                    int nNodes = rnd.Next(nNodeFrom, nNodeTo + 1);
+                    int linksPerStep = rnd.Next(nMinLink, nMaxLink + 1);
+
+                    // B1: Xây mạng theo chiến lược DISC
+                    BasicNetwork net = BuildDISCNetwork(nNodes, linksPerStep, rnd);
+
+                    if (net == null || !net.Nodes.Any())
+                        continue;
+
+                    // Bỏ qua nếu không đạt 60% số node mục tiêu
+                    if (net.Nodes.Count() < nNodes * 6 / 10)
+                        continue;
+
+                    int nodeCount = net.Nodes.Count();
+                    int edgeCount = net.Edges.Count();
+
+                    // B2: K-shell centrality (dùng BasicNetwork API)
+                    Dictionary<Node, int> kshell;
+                    try
+                    {
+                        kshell = net.K_ShellCentrality();
+                    }
+                    catch (Exception)
+                    {
+                        continue;
+                    }
+
+                    // B3: Phân tích tỉ lệ DISC theo từng k-level
+                    var analyzer = new RatioAnalyzer();
+                    var results = analyzer.AnalyzeRatios(kshell, networkId, nodeCount, edgeCount, linksPerStep);
+
+                    lock (_resultsLock)
+                    {
+                        allResults.AddRange(results);
+                    }
+
+                    // B4 data: Chỉ lấy innermost k-core (k_max) — 8 cột
+                    var innermostStat = results.OrderByDescending(x => x.KLevel).First();
+                    string lineData = string.Format(
+                        System.Globalization.CultureInfo.InvariantCulture,
                         "{0}\t{1}\t{2}\t{3}\t{4:F4}\t{5:F4}\t{6:F4}\t{7:F4}",
-                        innermostStat.NetworkId, nodeCount, edgeCount, innermostStat.KLevel,
+                        networkId, nodeCount, edgeCount, innermostStat.KLevel,
                         innermostStat.RatioD, innermostStat.RatioI,
-                        innermostStat.RatioC, innermostStat.RatioS));
+                        innermostStat.RatioC, innermostStat.RatioS);
+                    innermostMap[networkId] = lineData;
+
+                    // Write live result to file immediately
+                    lock (_fileLock)
+                    {
+                        using (StreamWriter sw = new StreamWriter(outputPath, true, Encoding.UTF8))
+                        {
+                            sw.WriteLine(lineData);
+                        }
+                    }
+
+                    localSuccess = true;
+                    int currentSuccess = Interlocked.Increment(ref successCount);
+                    User.One.ShowWaitIndicator(currentSuccess, nNet);
                 }
- 
-                successCount++;
-                User.One.ShowWaitIndicator(successCount, nNet);
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[ERROR] Network ID {networkId}, Attempt {localAttempts}: {ex.Message}");
+                }
             }
-            catch (Exception ex)
+        });
+
+        // B4: Ghi kết quả hoàn chỉnh sắp xếp theo Id mạng (1 đến 1000)
+        using (StreamWriter sw = new StreamWriter(outputPath, false, Encoding.UTF8))
+        {
+            sw.WriteLine("Id mạng\tSố node\tSố cạnh\tKcore\t" +
+                         "Tỉ lệ D trong lõi kcore trong cùng\tTỉ lệ I trong lõi kcore trong cùng\tTỉ lệ C trong lõi kcore trong cùng\tTỉ lệ S trong lõi kcore trong cùng");
+            foreach (var kvp in innermostMap.OrderBy(x => x.Key))
             {
-                    Console.WriteLine($"[ERROR] Network {attemptCount}: {ex.Message}");
-                
+                sw.WriteLine(kvp.Value);
             }
         }
- 
+        
         if (successCount < nNet)
             User.One.MessageToUser($"Chỉ tạo được {successCount}/{nNet} network thành công");
- 
-        
+
+        // Calculate and save summary stats (mean and std dev)
+        var statsCalc = new StatisticsCalculator();
+        var summary = statsCalc.CalculateSummaryStats(allResults);
+
+        string summaryPath = Path.Combine(Netutil.OutPutDirector, reportFileName.Replace(".txt", "") + ".summary.txt");
+        using (StreamWriter sw = new StreamWriter(summaryPath, false))
+        {
+            sw.WriteLine("Kcore\tMeanRatioD\tStdRatioD\tMeanRatioI\tStdRatioI\tMeanRatioC\tStdRatioC\tMeanRatioS\tStdRatioS\tObservationCount");
+            foreach (var stat in summary)
+            {
+                sw.WriteLine(string.Format(
+                    "{0}\t{1:F4}\t{2:F4}\t{3:F4}\t{4:F4}\t{5:F4}\t{6:F4}\t{7:F4}\t{8:F4}\t{9}",
+                    stat.KLevel,
+                    stat.MeanRatioD, stat.StdRatioD,
+                    stat.MeanRatioI, stat.StdRatioI,
+                    stat.MeanRatioC, stat.StdRatioC,
+                    stat.MeanRatioS, stat.StdRatioS,
+                    stat.ObservationCount));
+            }
+        }
     }
  
+    // ─── Grid Search ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Runs a grid search over (alphaD, betaD, betaI, betaS, betaC) combinations
+    /// to find parameter sets where I+S joint innermost-core share is maximised
+    /// while C is minimised. Results written to disc.gridsearch.txt, sorted by I+S desc.
+    /// </summary>
+    public static void DiSCGridSearch(
+        int nPerConfig,
+        int nNodeFrom, int nNodeTo,
+        int nMinLink,  int nMaxLink)
+    {
+        // Sweep exponents: βD, βI, βS, βC (54 combinations)
+        var betaDValues = new[] { 1.0, 1.5, 2.0 };
+        var betaIValues = new[] { 2.5, 3.5, 4.5 };
+        var betaSValues = new[] { 2.5, 3.5, 4.5 };
+        var betaCValues = new[] { 2.0, 3.0 };
+
+        var configs = new List<SensitivityParams>();
+        foreach (var bD in betaDValues)
+        foreach (var bI in betaIValues)
+        foreach (var bS in betaSValues)
+        foreach (var bC in betaCValues)
+        {
+            configs.Add(new SensitivityParams
+            {
+                AlphaD = 1.0, BetaD = bD, BetaI = bI, BetaS = bS, BetaC = bC,
+                Label  = $"bD={bD:F1} bI={bI:F1} bS={bS:F1} bC={bC:F1}"
+            });
+        }
+
+        Console.WriteLine($"[GridSearch] Running {configs.Count} configurations × {nPerConfig} networks each ...");
+        string outPath = Path.Combine(Netutil.OutPutDirector, "disc.gridsearch.txt");
+
+        // Collect all results with RMSE against empirical target (S=54.1%, I=35.1%, D=10.8%, C=0.0%)
+        var allRows = new System.Collections.Concurrent.ConcurrentBag<(double RMSE, string Row)>();
+
+        int done = 0;
+        foreach (var cfg in configs)
+        {
+            var (meanD, meanI, meanS, meanC, sdD, sdI, sdS, sdC) =
+                RunSensitivityConfig(cfg, nPerConfig, nNodeFrom, nNodeTo, nMinLink, nMaxLink);
+
+            double pD = meanD * 100.0;
+            double pI = meanI * 100.0;
+            double pS = meanS * 100.0;
+            double pC = meanC * 100.0;
+
+            // Target empirical proportions: S=54.1%, I=35.1%, D=10.8%, C=0.0%
+            double rmse = Math.Sqrt(((pS - 54.1)*(pS - 54.1) + (pI - 35.1)*(pI - 35.1) + (pD - 10.8)*(pD - 10.8) + (pC - 0.0)*(pC - 0.0)) / 4.0);
+
+            string row = string.Format(
+                System.Globalization.CultureInfo.InvariantCulture,
+                "{0}\t{1:F2}\t{2:F2}\t{3:F2}\t{4:F2}\t{5:F2}\t{6:F2}\t{7:F2}\t{8:F2}\t{9:F2}",
+                cfg.Label,
+                pD, pI, pS, pC,
+                sdD * 100, sdI * 100, sdS * 100, sdC * 100,
+                rmse);
+            allRows.Add((rmse, row));
+
+            done++;
+            Console.WriteLine($"[{done}/{configs.Count}] {cfg.Label} => D={pD:F1}% I={pI:F1}% S={pS:F1}% C={pC:F1}% | RMSE={rmse:F2}");
+        }
+
+        // Write sorted by RMSE ascending (best fit first)
+        using (var sw = new StreamWriter(outPath, false, Encoding.UTF8))
+        {
+            sw.WriteLine("Configuration\tD(%)\tI(%)\tS(%)\tC(%)\tD_sd\tI_sd\tS_sd\tC_sd\tRMSE");
+            foreach (var (_, row) in allRows.OrderBy(x => x.RMSE))
+                sw.WriteLine(row);
+        }
+
+        Console.WriteLine($"[GridSearch] Done. Results saved to {outPath}");
+        Console.WriteLine("\n=================== TOP 5 OPTIMAL CONFIGURATIONS (Lowest RMSE) ===================");
+        foreach (var (rVal, row) in allRows.OrderBy(x => x.RMSE).Take(5))
+            Console.WriteLine("  " + row);
+        Console.WriteLine("=================================================================================\n");
+    }
+
+    // ─── End Grid Search ──────────────────────────────────────────────────────────
+
+    
+    /// <summary>
+    /// Holds overrideable exponent/weight parameters for sensitivity runs.
+    /// Default values match the baseline (Table 2.1 Baseline row).
+    /// </summary>
+    public class SensitivityParams
+    {
+        public double AlphaD  { get; set; } = 1.0;   // weight of Betweenness in D blend
+        public double BetaD   { get; set; } = 1.0;   // exponent for D
+        public double BetaI   { get; set; } = 2.5;   // exponent for I
+        public double BetaS   { get; set; } = 4.5;   // exponent for S
+        public double BetaC   { get; set; } = 2.0;   // exponent for C (absolute value)
+        public string Label   { get; set; } = "Baseline";
+    }
+
+    /// <summary>
+    /// Runs sensitivity analysis: 9 configurations × nPerConfig networks each.
+    /// Writes one TSV summary row per configuration to disc.sensitivity.txt.
+    /// </summary>
+    public static void DiSCSensitivityAnalysis(
+        int nPerConfig,
+        int nNodeFrom, int nNodeTo,
+        int nMinLink,  int nMaxLink)
+    {
+        // 9 configurations: Baseline + ±20% for αD, βI, βS (6 perturbations)
+        // plus ±20% for βD and βC (4 more) = 10 total rows including baseline
+        var configs = new List<SensitivityParams>
+        {
+            new SensitivityParams { Label = "Baseline",                                               AlphaD=0.6, BetaD=1.5, BetaI=3.0, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "betaI = 2.4 (-20%)",                                    AlphaD=0.6, BetaD=1.5, BetaI=2.4, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "betaI = 3.6 (+20%)",                                    AlphaD=0.6, BetaD=1.5, BetaI=3.6, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "alphaD = 0.48 (-20%)",                                  AlphaD=0.48, BetaD=1.5, BetaI=3.0, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "alphaD = 0.72 (+20%)",                                  AlphaD=0.72, BetaD=1.5, BetaI=3.0, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "betaS = 2.0 (-20%)",                                    AlphaD=0.6, BetaD=1.5, BetaI=3.0, BetaS=2.0, BetaC=2.0 },
+            new SensitivityParams { Label = "betaS = 3.0 (+20%)",                                    AlphaD=0.6, BetaD=1.5, BetaI=3.0, BetaS=3.0, BetaC=2.0 },
+            new SensitivityParams { Label = "betaD = 1.2 (-20%)",                                    AlphaD=0.6, BetaD=1.2, BetaI=3.0, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "betaD = 1.8 (+20%)",                                    AlphaD=0.6, BetaD=1.8, BetaI=3.0, BetaS=2.5, BetaC=2.0 },
+            new SensitivityParams { Label = "betaC = 1.6 (-20%)",                                    AlphaD=0.6, BetaD=1.5, BetaI=3.0, BetaS=2.5, BetaC=1.6 },
+            new SensitivityParams { Label = "betaC = 2.4 (+20%)",                                    AlphaD=0.6, BetaD=1.5, BetaI=3.0, BetaS=2.5, BetaC=2.4 },
+        };
+
+        string outPath = Path.Combine(Netutil.OutPutDirector, "disc.sensitivity.txt");
+        using (var sw = new StreamWriter(outPath, false, Encoding.UTF8))
+        {
+            sw.WriteLine("Configuration\tD_mean(%)\tI_mean(%)\tS_mean(%)\tC_mean(%)\tD_sd\tI_sd\tS_sd\tC_sd\tRanking");
+
+            foreach (var cfg in configs)
+            {
+                Console.WriteLine($"[Sensitivity] Running: {cfg.Label} ({nPerConfig} networks) ...");
+                var (meanD, meanI, meanS, meanC, sdD, sdI, sdS, sdC) =
+                    RunSensitivityConfig(cfg, nPerConfig, nNodeFrom, nNodeTo, nMinLink, nMaxLink);
+
+                // Build ranking string (descending by mean)
+                var ranked = new[] { ("D", meanD), ("I", meanI), ("S", meanS), ("C", meanC) }
+                    .OrderByDescending(x => x.Item2)
+                    .Select(x => x.Item1);
+                string ranking = string.Join(">", ranked);
+
+                sw.WriteLine(string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    "{0}\t{1:F2}\t{2:F2}\t{3:F2}\t{4:F2}\t{5:F2}\t{6:F2}\t{7:F2}\t{8:F2}\t{9}",
+                    cfg.Label,
+                    meanD * 100, meanI * 100, meanS * 100, meanC * 100,
+                    sdD * 100,   sdI * 100,   sdS * 100,   sdC * 100,
+                    ranking));
+                sw.Flush();
+
+                Console.WriteLine($"  D={meanD*100:F2}%  I={meanI*100:F2}%  S={meanS*100:F2}%  C={meanC*100:F2}%  Ranking: {ranking}");
+            }
+        }
+
+        Console.WriteLine($"[Sensitivity] Done. Results saved to {outPath}");
+    }
+
+    private static (double meanD, double meanI, double meanS, double meanC,
+                    double sdD,   double sdI,   double sdS,   double sdC)
+        RunSensitivityConfig(
+            SensitivityParams p,
+            int nNet,
+            int nNodeFrom, int nNodeTo,
+            int nMinLink,  int nMaxLink)
+    {
+        var rnd = new System.Threading.ThreadSafeRandom();
+        var dList = new System.Collections.Concurrent.ConcurrentBag<double>();
+        var iList = new System.Collections.Concurrent.ConcurrentBag<double>();
+        var sList = new System.Collections.Concurrent.ConcurrentBag<double>();
+        var cList = new System.Collections.Concurrent.ConcurrentBag<double>();
+        int successCount = 0;
+
+        Parallel.For(0, nNet, _ =>
+        {
+            int attempts = 0;
+            while (attempts < 10)
+            {
+                attempts++;
+                try
+                {
+                    int nNodes      = rnd.Next(nNodeFrom, nNodeTo + 1);
+                    int linksPerStep = rnd.Next(nMinLink, nMaxLink + 1);
+
+                    BasicNetwork net = BuildDISCNetworkWithParams(nNodes, linksPerStep, rnd, p);
+                    if (net == null || net.Nodes.Count() < nNodes * 6 / 10) continue;
+
+                    Dictionary<Node, int> kshell;
+                    try { kshell = net.K_ShellCentrality(); }
+                    catch { continue; }
+
+                    // Find innermost core nodes
+                    int kMax = kshell.Values.Max();
+                    var coreNodes = kshell.Where(kv => kv.Value == kMax).Select(kv => kv.Key).ToList();
+                    int coreSize  = coreNodes.Count;
+                    if (coreSize == 0) continue;
+
+                    double rD = coreNodes.Count(n => n.name.StartsWith("D")) / (double)coreSize;
+                    double rI = coreNodes.Count(n => n.name.StartsWith("I")) / (double)coreSize;
+                    double rS = coreNodes.Count(n => n.name.StartsWith("S")) / (double)coreSize;
+                    double rC = coreNodes.Count(n => n.name.StartsWith("C")) / (double)coreSize;
+
+                    dList.Add(rD); iList.Add(rI); sList.Add(rS); cList.Add(rC);
+                    Interlocked.Increment(ref successCount);
+                    break;
+                }
+                catch { }
+            }
+        });
+
+        double Avg(System.Collections.Concurrent.ConcurrentBag<double> bag)
+            => bag.Count == 0 ? 0 : bag.Average();
+        double Std(System.Collections.Concurrent.ConcurrentBag<double> bag)
+        {
+            if (bag.Count < 2) return 0;
+            double m = bag.Average();
+            return Math.Sqrt(bag.Sum(x => (x - m) * (x - m)) / (bag.Count - 1));
+        }
+
+        return (Avg(dList), Avg(iList), Avg(sList), Avg(cList),
+                Std(dList), Std(iList), Std(sList), Std(cList));
+    }
+
+    private static BasicNetwork BuildDISCNetworkWithParams(
+        int totalNodes, int linksPerStep, Random rnd, SensitivityParams p)
+    {
+        BasicNetwork net = new BasicNetwork();
+        int seedSize = Math.Max(linksPerStep + 1, 3);
+        var seedNodes = new List<Node>();
+
+        for (int i = 0; i < seedSize; i++)
+        {
+            string nodeType = SelectNodeTypeByStrategy(net, rnd);
+            Node n = net.AddNode(nodeType + "_" + i);
+            seedNodes.Add(n);
+        }
+        for (int i = 0; i < seedNodes.Count; i++)
+        {
+            Node a = seedNodes[i];
+            Node b = seedNodes[(i + 1) % seedNodes.Count];
+            if (!net.hasEdge(a, b))
+                net.AddArc(new Interaction(a, b, 0, "", 1, Interaction.DirectionType.undirected));
+        }
+
+        int nodeCounter = seedSize;
+        int failCounter = 0;
+        const int maxConsecFail = 2000;
+        const double triangleProb = 0.3;
+
+        var neighborCache = new Dictionary<string, HashSet<string>>();
+        foreach (Node sn in seedNodes)
+            neighborCache[sn.name] = new HashSet<string>();
+        for (int i = 0; i < seedNodes.Count; i++)
+        {
+            Node a = seedNodes[i];
+            Node b = seedNodes[(i + 1) % seedNodes.Count];
+            neighborCache[a.name].Add(b.name);
+            neighborCache[b.name].Add(a.name);
+        }
+
+        while (net.Nodes.Count() < totalNodes && failCounter < maxConsecFail)
+        {
+            string newType = SelectNodeTypeByStrategy(net, rnd);
+            string newName = newType + "_" + nodeCounter++;
+            Node newNode = net.AddNode(newName);
+            neighborCache[newName] = new HashSet<string>();
+
+            var candidates = net.Nodes.Where(n => n.name != newName).ToList();
+            if (candidates.Count == 0) { failCounter++; continue; }
+            failCounter = 0;
+
+            double[] scores = ComputeAttachmentScoresWithParams(net, candidates, newType, p);
+            double totalScore = scores.Sum();
+
+            var chosen = new HashSet<int>();
+            var chosenNodes = new List<Node>();
+            int maxLinks = Math.Min(linksPerStep, candidates.Count);
+            int attempts = 0;
+            int maxAttempts = candidates.Count * 20;
+
+            while (chosen.Count < maxLinks && attempts < maxAttempts)
+            {
+                attempts++;
+                int idx = WeightedRandomSelect(scores, totalScore, rnd);
+                if (idx < 0) break;
+                Node target = candidates[idx];
+                if (!chosen.Contains(idx) && !neighborCache[newName].Contains(target.name))
+                {
+                    chosen.Add(idx);
+                    chosenNodes.Add(target);
+                    net.AddArc(new Interaction(newNode, target, 0, "", 1, Interaction.DirectionType.undirected));
+                    neighborCache[newName].Add(target.name);
+                    neighborCache[target.name].Add(newName);
+                }
+            }
+
+            foreach (Node target in chosenNodes)
+            {
+                foreach (string neighborName in neighborCache[target.name].ToList())
+                {
+                    if (neighborName != newName
+                        && !neighborCache[newName].Contains(neighborName)
+                        && rnd.NextDouble() < triangleProb)
+                    {
+                        Node neighbor = candidates.FirstOrDefault(n => n.name == neighborName);
+                        if (neighbor != null)
+                        {
+                            net.AddArc(new Interaction(newNode, neighbor, 0, "", 1,
+                                Interaction.DirectionType.undirected));
+                            neighborCache[newName].Add(neighborName);
+                            neighborCache[neighborName].Add(newName);
+                        }
+                    }
+                }
+            }
+        }
+        return net;
+    }
+
+    private static double[] ComputeAttachmentScoresWithParams(
+        BasicNetwork net,
+        List<Node> candidates,
+        string discType,
+        SensitivityParams p)
+    {
+        int n = candidates.Count;
+        double[] scores = new double[n];
+
+        switch (discType)
+        {
+            case "D":
+            {
+                var betweenness = net.BetweenessCentrality();
+                for (int i = 0; i < n; i++)
+                {
+                    float bw = betweenness.TryGetValue(candidates[i], out float b) ? Math.Max(b, 0f) : 0f;
+                    scores[i] = Math.Pow(Math.Max((double)bw, 1e-6), p.BetaD);
+                }
+                break;
+            }
+            case "I":
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    double deg = Math.Max(candidates[i].TotalDegree, 1);
+                    scores[i] = Math.Pow(deg, p.BetaI);
+                }
+                break;
+            }
+            case "S":
+            {
+                var closenessMap = net.ClosenessCentrality();
+                for (int i = 0; i < n; i++)
+                {
+                    double deg = candidates[i].TotalDegree;
+                    double clus = ComputeLocalClusteringCoefficient(net, candidates[i]);
+                    double triangles = clus * deg * (deg - 1.0) / 2.0;
+                    double cl = closenessMap.TryGetValue(candidates[i].name, out double cv)
+                                ? Math.Max(cv, 1e-6) : 1e-6;
+                    double val = (triangles + 1.0) * cl;
+                    scores[i] = Math.Pow(val, p.BetaS);
+                }
+                break;
+            }
+            case "C":
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    double deg = candidates[i].TotalDegree + 1.0;
+                    scores[i] = Math.Pow(deg, -p.BetaC);
+                }
+                break;
+            }
+            default:
+                for (int i = 0; i < n; i++) scores[i] = 1.0;
+                break;
+        }
+        return scores;
+    }
+
+    // ─── End Sensitivity Analysis ─────────────────────────────────────────────
+
     
     private static BasicNetwork BuildDISCNetwork(int totalNodes, int linksPerStep, Random rnd)
     {
@@ -623,7 +1048,7 @@ namespace BasicNet.Examination
                     neighborCache[target.name].Add(newName);
                 }
             }
- 
+
             // Triadic closure: dùng neighborCache — O(degree) thay vì O(N×E)
             foreach (Node target in chosenNodes)
             {
@@ -652,36 +1077,9 @@ namespace BasicNet.Examination
     
     private static string SelectNodeTypeByStrategy(BasicNetwork net, Random rnd)
     {
-        var existingNodes = net.Nodes.ToList();
- 
-        if (existingNodes.Count < 5)
-            return DISC_TYPES[rnd.Next(4)];
- 
-        int sampleSize = Math.Min(10, existingNodes.Count);
-        var sample = existingNodes.OrderBy(_ => rnd.Next()).Take(sampleSize).ToList();
- 
-        var typeCounts = new Dictionary<string, int> { { "D", 0 }, { "I", 0 }, { "S", 0 }, { "C", 0 } };
-        foreach (var node in sample)
-        {
-            string t = GetNodeType(node);
-            if (typeCounts.ContainsKey(t)) typeCounts[t]++;
-        }
- 
-        int total = typeCounts.Values.Sum();
-        if (total == 0)
-            return DISC_TYPES[rnd.Next(4)];
- 
-        int roll = rnd.Next(total);
-        int cumulative = 0;
-        foreach (var kvp in typeCounts)
-        {
-            cumulative += kvp.Value;
-            if (roll < cumulative) return kvp.Key;
-        }
- 
         return DISC_TYPES[rnd.Next(4)];
     }
- 
+
     
     private static double[] ComputeAttachmentScores(
         BasicNetwork net,
@@ -690,59 +1088,73 @@ namespace BasicNet.Examination
     {
         int n = candidates.Count;
         double[] scores = new double[n];
- 
+
         switch (discType)
         {
             case "D":
             {
+                // w_D(u) = Betweenness(u)^1.0
+                // Ref: Eq.(1) in manuscript — D-type targets pure Betweenness centrality
+                // to model boundary-spanning and gatekeeping attachment behavior.
+                const double betaD = 1.0;
                 var betweenness = net.BetweenessCentrality();
                 for (int i = 0; i < n; i++)
                 {
-                    float bw = betweenness.TryGetValue(candidates[i], out float b)
-                                ? Math.Max(b, 1e-10f) : 1e-10f;
-                    float deg = Math.Max(candidates[i].TotalDegree, 1);
-                    scores[i] = Math.Pow(0.6 * bw + 0.4 * deg, 1.5);
+                    float bw = betweenness.TryGetValue(candidates[i], out float b) ? Math.Max(b, 0f) : 0f;
+                    scores[i] = Math.Pow(Math.Max((double)bw, 1e-6), betaD);
                 }
                 break;
             }
- 
+
             case "I":
             {
+                // w_I(u) = Degree(u)^2.5
+                // Ref: Eq.(2) — super-hub-seeking; exponent amplifies PA beyond
+                // linear BA rule, consistent with extraversion–centrality link.
+                const double betaI = 2.5;
                 for (int i = 0; i < n; i++)
                 {
                     double deg = Math.Max(candidates[i].TotalDegree, 1);
-                    scores[i] = Math.Pow(deg, 3.0);
+                    scores[i] = Math.Pow(deg, betaI);
                 }
                 break;
             }
 
-                case "S":
-                    {
-                        for (int i = 0; i < n; i++)
-                        {
-                            Node node = candidates[i];
-
-                            double clustering = ComputeLocalClusteringCoefficient(net,node);
-
-                            double degree = Math.Max(node.TotalDegree, 1);
-
-                            // S = trusted cohesive local core
-                            scores[i] = Math.Pow(clustering * degree,2.5);
-                        }
-
-                        break;
-                    }
-
-                case "C":
+            case "S":
             {
+                // w_S(u) = ((Triangles(u) + 1) · Closeness(u))^4.5
+                // Ref: Eq.(3) — S-type seeks nodes combining local cohesion (Triangles)
+                // and global accessibility (Closeness).
+                // Models Steadiness strategy: supportive within cohesive groups while remaining accessible network-wide.
+                const double betaS = 4.5;
+                var closenessMap = net.ClosenessCentrality();
                 for (int i = 0; i < n; i++)
                 {
-                    double deg = Math.Max(candidates[i].TotalDegree, 1);
-                    scores[i] = Math.Pow(1.0 / deg, 2.0);
+                    double deg = candidates[i].TotalDegree;
+                    double clus = ComputeLocalClusteringCoefficient(net, candidates[i]);
+                    double triangles = clus * deg * (deg - 1.0) / 2.0;
+                    double cl = closenessMap.TryGetValue(candidates[i].name, out double cv)
+                                ? Math.Max(cv, 1e-6) : 1e-6;
+                    double val = (triangles + 1.0) * cl;
+                    scores[i] = Math.Pow(val, betaS);
                 }
                 break;
             }
- 
+
+            case "C":
+            {
+                // w_C(u) = (Degree(u) + 1)^-2.0
+                // Ref: Eq.(4) — C-type targets peripheral nodes; anti-preferential
+                // attachment. The +1 smoothing keeps weight finite for degree-0 nodes.
+                const double betaC = 2.0;
+                for (int i = 0; i < n; i++)
+                {
+                    double deg = candidates[i].TotalDegree + 1.0;
+                    scores[i] = Math.Pow(deg, -betaC);
+                }
+                break;
+            }
+
             default:
                 for (int i = 0; i < n; i++) scores[i] = 1.0;
                 break;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.Collections;
@@ -100,6 +100,30 @@ namespace NetConsole
             
             //---> End GPS study
             
+            if (args != null && args.Length > 0 && args[0] == "--test")
+            {
+                App = new Program();
+                user = new ConsoleUser();
+                OnTestCommand(null);
+                System.Environment.Exit(0);
+            }
+
+            if (args != null && args.Length > 0 && args[0] == "--sensitivity")
+            {
+                App = new Program();
+                user = new ConsoleUser();
+                OnSensitivityCommand(null);
+                System.Environment.Exit(0);
+            }
+
+            if (args != null && args.Length > 0 && args[0] == "--gridsearch")
+            {
+                App = new Program();
+                user = new ConsoleUser();
+                OnGridSearchCommand(null);
+                System.Environment.Exit(0);
+            }
+
             ConsoleTool.EnableCloseButton(false);
             ConsoleTool.MaximizeConsoleWindow();
                 
@@ -180,34 +204,28 @@ namespace NetConsole
         #region System functions
         private static void OnTestCommand(Dictionary<int, KeyValuePair<string, object>> Parameter)
         {
-            //BasicNet.Examination.SignalingStudy.CalculateCompetitiveNetwork("Competition2set.txt", "7,8,9", "10,11", "none.txt");
-
-            //BooleanNetwork net = BooleanNetwork.ReadSignalingNetworkFile("Competition2set.txt");
-
-            //BasicNet.Examination.SignalingStudy.CalculateLoyalMatrixPoint("karate.txt", "karate 1.txt");
-            BasicNet.Examination.SignalingStudy.CalculateCompetitiveNetwork("test.txt", "1", "10", "1_10.txt");
-
-            //Node pNode = null;
-            //BasicNetwork newNet = net.CreateNetworkByMergedNode(new Node[] { net["7"], net["8"], net["9"] }, ref pNode);
-            //Netutil.DumpNet(newNet);
-
-            ////string fileName = "Markov.txt";
-            //string fileName = "BinhAnh.txt";
-
-            ////BooleanNetwork net = BooleanNetwork.ReadSignalingNetworkFile(fileName);
-            //net.WriteToFile(null);
-            //Dictionary<Node, float> carRanking = net.TaxiPassengerRank();
-            //Dictionary<Node, float> pageRank = net.PageRankCentralityInLink();
-
-            //int x = 0;
-            //Dictionary<Node, int> reachingShell = net.R_ShellCentrality();
-            //Dictionary<string, double> HCcentrality = net.HierarchicalClosenessCentrality();
-            //Dictionary<string, Mathutil.Triple<double>> HCcentralitys = net.HierarchicalClosenessCentralityAnalysis();
-            //var coreNode = from p in reachingShell where p.Value > reachingShell.Values.Min() select p.Key;
-            
-            //BasicNetwork.ReadNetworkFromKeggXML(net, "1926_Bladder cancer.xml");
-            //net.WriteToFile("abc1234.txt");
-
+            Console.WriteLine("Running DiSC Network Simulation (1000 Networks)...");
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            // Run a simulation of 1000 networks, nodes range 100-200, links per step range 2-6
+            BasicNet.Examination.SignalingStudy.DiSCNetworkSimulation(1000, 100, 200, 2, 6, "disc.ba.rel.txt");
+            stopwatch.Stop();
+            Console.WriteLine($"Simulation finished in {stopwatch.ElapsedMilliseconds} ms.");
+        }
+        private static void OnSensitivityCommand(Dictionary<int, KeyValuePair<string, object>> Parameter)
+        {
+            Console.WriteLine("Running DiSC Sensitivity Analysis (11 configurations × 100 networks each)...");
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            BasicNet.Examination.SignalingStudy.DiSCSensitivityAnalysis(100, 100, 200, 2, 6);
+            stopwatch.Stop();
+            Console.WriteLine($"Sensitivity analysis finished in {stopwatch.ElapsedMilliseconds} ms.");
+        }
+        private static void OnGridSearchCommand(Dictionary<int, KeyValuePair<string, object>> Parameter)
+        {
+            Console.WriteLine("Running DiSC Grid Search (54 configurations × 15 networks each)...");
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            BasicNet.Examination.SignalingStudy.DiSCGridSearch(15, 100, 200, 2, 6);
+            stopwatch.Stop();
+            Console.WriteLine($"Grid search finished in {stopwatch.ElapsedMilliseconds} ms.");
         }
         private static void ConvertTxtToExcel(string Folder)
         {

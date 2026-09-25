@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -20,11 +20,18 @@ namespace NetSimulation
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
-            //GenerateCombination();
-            //AlgorithmTest();
-            //Debug.WriteLine("char 1= "+(char) 4);
+            if (args != null && args.Length > 0 && args[0] == "--test")
+            {
+                Console.WriteLine("Running DiSC Network Simulation (1000 Networks)...");
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+                BasicNet.Examination.SignalingStudy.DiSCNetworkSimulation(1000, 100, 200, 2, 6, "disc.ba.rel.txt");
+                stopwatch.Stop();
+                Console.WriteLine($"Simulation finished in {stopwatch.ElapsedMilliseconds} ms.");
+                return;
+            }
+
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             mainform = new MainForm();

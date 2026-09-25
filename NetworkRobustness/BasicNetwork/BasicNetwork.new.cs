@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
@@ -4741,28 +4741,111 @@ namespace BasicNet
         /// In undirected network, the nodes with the highest k-shell index are inﬂuential spreaders in complex undirected networks (see "Identiﬁcation of inﬂuential spreaders in complex networks" in http://www.sciencedirect.com/science/article/pii/S0378437113010406)
         /// </summary>
         /// <returns>k-shell indice and their lists of nodes from the network corresponding the k-shell index</returns>
-        public Dictionary<Node,int> K_ShellCentrality()
+        public Dictionary<Node, int> K_ShellCentrality()
         {
-            BasicNetwork Net = this.Clone() as BasicNetwork;
-            Dictionary<Node, int> kshellNet = new Dictionary<Node, int>();
+            var nodes = this.Nodes.ToArray();
+            int n = nodes.Length;
+            var kshellNet = new Dictionary<Node, int>(n);
+            if (n == 0) return kshellNet;
 
-            int maxDeg = Net.MaxTotalDeg;
-            for (int k = 1; k <= maxDeg; k++)
+            // Map node ID to index in the nodes array
+            var idToIndex = new Dictionary<int, int>(n);
+            for (int i = 0; i < n; i++)
             {
-                
-                var iDegreeNode = (from p in Net.Nodes where p.TotalDegree <= k select p);
-                while (iDegreeNode.Count() > 0)
-                {
-                    Node[] idegNode=iDegreeNode.ToArray();
-                    foreach (Node n in idegNode)
-                        kshellNet[this[n.id]] = k;
-
-                    Net.RemoveNodeAndArc(idegNode); // removing all nodes and their arcs will maybe make that iDegreeNode has other nodes
-                }
-
-                if (Net.Nodes.Count() == 0)// stop if having no node anymore
-                    break;
+                idToIndex[nodes[i].id] = i;
             }
+
+            int[] deg = new int[n];
+            var adj = new List<int>[n];
+            int maxDeg = 0;
+
+            for (int i = 0; i < n; i++)
+            {
+                deg[i] = nodes[i].TotalDegree;
+                if (deg[i] > maxDeg) maxDeg = deg[i];
+
+                adj[i] = new List<int>();
+                foreach (var arc in nodes[i].Arcs)
+                {
+                    var partner = arc.GetPartnerVertex(nodes[i]);
+                    if (partner != null && partner.id != nodes[i].id)
+                    {
+                        if (idToIndex.TryGetValue(partner.id, out int partnerIdx))
+                        {
+                            adj[i].Add(partnerIdx);
+                        }
+                    }
+                }
+            }
+
+            // Bins for sorting
+            int[] bin = new int[maxDeg + 1];
+            for (int i = 0; i < n; i++)
+            {
+                bin[deg[i]]++;
+            }
+
+            // Start index of each bin in the sorted array vert
+            int start = 0;
+            for (int d = 0; d <= maxDeg; d++)
+            {
+                int count = bin[d];
+                bin[d] = start;
+                start += count;
+            }
+
+            // vert: nodes sorted by degree
+            // pos: position of node i in vert
+            int[] vert = new int[n];
+            int[] pos = new int[n];
+            for (int i = 0; i < n; i++)
+            {
+                int d = deg[i];
+                vert[bin[d]] = i;
+                pos[i] = bin[d];
+                bin[d]++;
+            }
+
+            // Restore bin starting positions
+            for (int d = maxDeg; d >= 1; d--)
+            {
+                bin[d] = bin[d - 1];
+            }
+            bin[0] = 0;
+
+            // Decompose
+            for (int i = 0; i < n; i++)
+            {
+                int u = vert[i];
+                kshellNet[nodes[u]] = Math.Max(deg[u], 1);
+
+                foreach (int v in adj[u])
+                {
+                    if (deg[v] > deg[u])
+                    {
+                        // To swap v with the first node in its bin
+                        int dv = deg[v];
+                        int pv = pos[v];
+                        int pw = bin[dv];
+                        int w = vert[pw];
+
+                        if (v != w)
+                        {
+                            // Swap v and w in vert and pos
+                            vert[pv] = w;
+                            vert[pw] = v;
+                            pos[v] = pw;
+                            pos[w] = pv;
+                        }
+
+                        // Move the start of bin[dv] to the right
+                        bin[dv]++;
+                        // Decrement degree of v
+                        deg[v]--;
+                    }
+                }
+            }
+
             return kshellNet;
         }
         /// <summary>
