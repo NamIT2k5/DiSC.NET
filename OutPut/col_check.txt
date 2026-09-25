@@ -1,0 +1,12 @@
+﻿Headers: ['Id mß║íng', 'Sß╗æ node', 'Sß╗æ cß║ính', 'Kcore', 'Tß╗ë lß╗ç D trong l├╡i kcore trong c├╣ng', 'Tß╗ë lß╗ç I trong l├╡i kcore trong c├╣ng', 'Tß╗ë lß╗ç C trong l├╡i kcore trong c├╣ng', 'Tß╗ë lß╗ç S trong l├╡i kcore trong c├╣ng']
+Sample row: {'Id mß║íng': '1', 'Sß╗æ node': '167', 'Sß╗æ cß║ính': '8040', 'Kcore': '77', 'Tß╗ë lß╗ç D trong l├╡i kcore trong c├╣ng': '0.2372', 'Tß╗ë lß╗ç I trong l├╡i kcore trong c├╣ng': '0.2692', 'Tß╗ë lß╗ç C trong l├╡i kcore trong c├╣ng': '0.2692', 'Tß╗ë lß╗ç S trong l├╡i kcore trong c├╣ng': '0.2244'}
+
+python : Traceback (most recent call last):
+At line:1 char:1
++ python -c "
++ ~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "<string>", line 17, in <module>
+IndexError: list index out of range

@@ -1,0 +1,10 @@
+﻿python :   File "<string>", line 40
+At line:1 char:1
++ python -c "
++ ~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (  File "<string>", line 40:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+    is_means = [results[" I\][i]+results[\S\][i]
+                        ^
+SyntaxError: unterminated string literal (detected at line 40)

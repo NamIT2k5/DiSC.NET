@@ -1,0 +1,8 @@
+﻿Networks where I > D: 474/1000 (47.4%)
+Networks where S > C: 677/1000 (67.7%)
+Networks where I+S > D+C: 644/1000 (64.4%)
+
+D: mean=26.47%  Enrichment Factor vs 25% = 1.059
+I: mean=26.65%  Enrichment Factor vs 25% = 1.066
+C: mean=21.02%  Enrichment Factor vs 25% = 0.841
+S: mean=25.86%  Enrichment Factor vs 25% = 1.034
